@@ -2,7 +2,7 @@
 # ### SVHOUND ######################################################################################
 # ##################################################################################################
 
-svhound <- function(structuralVariantsData=NULL, window_size=NULL, subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE, output_prefix=""){
+svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix="", subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE){
 # ############################################## #
 # Analysis of SV with the ESF                    #
 # Wreapper for the analysis that includes a      #
