@@ -1,0 +1,10 @@
+Package: SVhound
+Type: Package
+Title: SVhound
+Version: 0.2
+Author: Luis Paulin
+Maintainer: Luis Paulin <lfpaulin@gmail.com>
+Description: ...
+License: MIT
+Encoding: UTF-8
+LazyData: true
