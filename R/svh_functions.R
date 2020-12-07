@@ -16,7 +16,7 @@ sv_analysis_ESF <- function(sv_dataset=NULL, outprefix=NULL){
 # with the ESF                                   #
 # ############################################## #
 
-    if(is.null(sv_dataset)) stop("the data-set to analyze is missing")
+    if (is.null(sv_dataset)) stop("the data-set to analyze is missing")
     if (is.null(outprefix)) outprefix="results"
 
     svhound_results <- list()
@@ -90,14 +90,15 @@ sv_analysis_ESF_window <- function(window=NULL, windowname=NULL, saved_results=N
     return(list(result=pnew, saved_results=saved_results))
 }
 
-sv_analysis_PSF <- function(sv_dataset=NULL){
+sv_analysis_PSF <- function(sv_dataset=NULL, outprefix=NULL){
 # ############################################## #
 # This is with the Pitman Sampling Formula       #
 # to say that the results do not substantially   #
 # improve to be worth the extra compiting time   #
 # ############################################## #
 
-    if(is.null(sv_dataset)) stop("the data-set to analyze is missing")
+    if (is.null(sv_dataset)) stop("the data-set to analyze is missing")
+    if (is.null(outprefix)) outprefix="results"
 
     nW <- nrow(sv_dataset)
     N <- ncol(sv_dataset)
@@ -142,14 +143,15 @@ sv_analysis_PSF <- function(sv_dataset=NULL){
     svhound_results <- sv_psf_pnew$pnewPITMAN
     names(svhound_results) <- rownames(sv_dataset)
     svhound_metadata <- pitman_sv
-    save(svhound_results, svhound_metadata, file="svhound_analysis_psf.RData")
-    return(c(results="svhound_analysis_psf.RData"))
+    outfile <- paste(outprefix, "-svhound_analysis_psf.RData", sep="")
+    save(svhound_results, svhound_metadata, file=outfile)
+    return(c(results=outfile))
 }
 
 
 # ######### SUBSAMPLE ############################
 
-subsample_analysis_ESF <- function(sv_dataset=NULL, subsample=NULL){
+subsample_analysis_ESF <- function(sv_dataset=NULL, subsample=NULL, outprefix=NULL){
 # ############################################## #
 # Subsample analysis of SV with the ESF          #
 #                                                #
@@ -162,6 +164,7 @@ subsample_analysis_ESF <- function(sv_dataset=NULL, subsample=NULL){
     # number of individuals subsampled
     if(is.null(subsample)) stop("[ERRROR] subsample is not given")
     if(is.null(sv_dataset)) stop("[ERROR] data was not given")
+    if (is.null(outprefix)) outprefix="results"
 
     # object to save the results
     svhound_results <- list()
@@ -216,12 +219,13 @@ subsample_analysis_ESF <- function(sv_dataset=NULL, subsample=NULL){
 
     svhound_results = results 
     svhound_metadata = samp_ind
-    save(svhound_results, svhound_metadata, file="svhound_analysis_subsample.RData")
-    return(c(results="svhound_analysis_subsample.RData"))
+    outfile <- paste(outprefix, "-svhound_analysis_subsample.RData", sep="")
+    save(svhound_results, svhound_metadata, file=outfile)
+    return(c(results=outfile))
 }
 
 
-subsample_analysis_PSF <- function(sv_dataset=NULL, subsample=NULL){
+subsample_analysis_PSF <- function(sv_dataset=NULL, subsample=NULL, outfile=NULL){
 # ############################################## #
 # This is with the Pitman Sampling Formula       #
 # to say that the results do not substantially   #
@@ -230,6 +234,7 @@ subsample_analysis_PSF <- function(sv_dataset=NULL, subsample=NULL){
 
     # data-set    
     if(is.null(sv_dataset)) stop("[ERROR] data was not given")
+    if (is.null(outprefix)) outprefix="results"
 
     # object to save the results
     svhound_results <- list()
@@ -289,6 +294,7 @@ subsample_analysis_PSF <- function(sv_dataset=NULL, subsample=NULL){
     # save results to object
     svhound_results = results
     svhound_metadata = list(pitman = pitman_sv, subsample = samp_ind)
-    save(svhound_results, svhound_metadata, file="svhound_analysis_subsample_psf.RData")
-    return(c(results="svhound_analysis_subsample_psf.RData"))
+    outfile <- paste(outprefix, "-svhound_analysis_subsample_psf.RData", sep="")
+    save(svhound_results, svhound_metadata, file=outfile)
+    return(c(results=outfile))
 }

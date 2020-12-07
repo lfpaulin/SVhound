@@ -2,7 +2,7 @@
 # ### SVHOUND ######################################################################################
 # ##################################################################################################
 
-svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix="", subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE){
+svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix=NULL, subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE){
 # ############################################## #
 # Analysis of SV with the ESF                    #
 # Wreapper for the analysis that includes a      #
@@ -15,7 +15,8 @@ svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix
     if (giveExampleData) return(sv_data_example)
 
     # no examples, check for mandatory parameters then
-    if (is.null(structuralVariantsData) | is.null(window_size) ) stop("The input data and/or window size are missing. Set the 'giveExampleData' TRUE to get an example. Data can be eathier the path of a VCF file or a SV-allele table in 'tsv' format")
+    if (is.null(structuralVariantsData) | is.null(window_size) ) stop("The input data and/or window size are missing. Set the 'giveExampleData' TRUE to get an example. Data can be eathier the path of a VCF file or a SV-allele table in plain text separated by 'spaces' or 'tabs'. Window size is in kilobases.")
+    window_size <- as.integer(window_size)
 
     # pre-cases
     # VCF is given give instructions
@@ -25,7 +26,7 @@ svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix
     }
 
     # SV-allele table is given
-    SVallelesTable <- read.table("tableSValleles", sep = "\t", header = TRUE)
+    SVallelesTable <- read.table(structuralVariantsData, header = TRUE)
 
     # check the data is like a matrix/data.frame
     cols <- ncol(SVallelesTable)
