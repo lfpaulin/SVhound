@@ -13,5 +13,13 @@ isVCF <- function(this_file=NULL){
 }
 
 GRCh37_SV_source <- function(){
-    return(list(url=("ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"), readme="http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/README_phase3_sv_callset_20150224", web="https://www.internationalgenome.org/phase-3-structural-variant-dataset", pub="https://www.nature.com/articles/nature15394"))
+    return(list(url="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", readme="http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/README_phase3_sv_callset_20150224", web="https://www.internationalgenome.org/phase-3-structural-variant-dataset", pub="https://www.nature.com/articles/nature15394"))
+}
+
+CCDG_SV_source <- function(){
+    return(list(url=(""), readme="", web="", pub="https://www.biorxiv.org/content/10.1101/2020.05.02.074096v1"))
+}
+
+Rhesus_SV_source <- function() {
+    return(list(url=(""), readme="", web="", pub=""))
 }
