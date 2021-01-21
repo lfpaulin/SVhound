@@ -80,16 +80,19 @@ class vcf_line(object):
 
             # indiviuals in the vcf file
             for gt in tab_sep_fields[VCF_MANDATORY_FIELDS:]:
-                # use FORMAT duhh!!! 
+                # use FORMAT duhh!!!
                 if use_format:
-                    tmp = gt.split(":")[gt_format_index]
-                    if tmp == "./.":
-                        gt = "|".join([
-                            gt.split(":")[ty_format_index],
-                            gt.split(":")[co_format_index]
-                        ])
+                    sv_gt = gt.split(":")[gt_format_index]
+                    if sv_gt == "./.":
+                        # use ./. as 0/0
+                        gt = "0/0" 
+                        # use ./. with type and coordinate for uniqueness
+                        # gt = "|".join([
+                        #     gt.split(":")[ty_format_index],
+                        #     gt.split(":")[co_format_index]
+                        # ])
                     else:
-                        gt = tmp
+                        gt = sv_gt
                 if gt not in self.GENOTYPE_UNIQ:
                     self.GENOTYPE_UNIQ[gt] = g.current_value()
                     self.GENOTYPE_COUNT[gt] = 1
