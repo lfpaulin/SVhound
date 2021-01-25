@@ -6,6 +6,21 @@ SVhound was tested and applied to the 1000genomes VCF file and also other data s
 
 ## Quickstart
 
+First use the vcf_parser_for_svhound.py to extract the SV genotypes given a window size:
+
+```
+zcat my_Vcf.gz | python vcf_parser_for_svhound.py 10000 > my_Vcf_extracted10kbpwindows.txt 
+
+```
+
+You can apply filters or other commands to pipe the VCF file into the python script. 
+
+
+Next, you going to run SVhound: 
+
+```
+Luis ?
+```
 
 
 ## Rhesus macaque SV Calling
