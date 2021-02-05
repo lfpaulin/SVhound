@@ -1,6 +1,6 @@
 .ewen.expected_k <-
 function(theta, n){
-    return(sum(apply(cbind(1:n), 1, function(x) { theta/(theta+x-1) } )) )
+    return(sum(theta/(theta+(1:n)-1)))
 }
 
 

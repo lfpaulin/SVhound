@@ -2,7 +2,7 @@
 # ### SVHOUND ######################################################################################
 # ##################################################################################################
 
-svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix=NULL, subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE){
+svhound <- function(structuralVariantsDataFile=NULL, SVallelesTable=NULL, window_size=NULL, output_prefix=NULL, subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE){
 # ############################################## #
 # Analysis of SV with the ESF                    #
 # Wreapper for the analysis that includes a      #
@@ -15,18 +15,21 @@ svhound <- function(structuralVariantsData=NULL, window_size=NULL, output_prefix
     if (giveExampleData) return(sv_data_example)
 
     # no examples, check for mandatory parameters then
-    if (is.null(structuralVariantsData) | is.null(window_size) ) stop("The input data and/or window size are missing. Set the 'giveExampleData' TRUE to get an example. Data can be eathier the path of a VCF file or a SV-allele table in plain text separated by 'spaces' or 'tabs'. Window size is in kilobases.")
+    is_data_provided <- is.null(structuralVariantsDataFile) & is.null(SVallelesTable)
+    data_is_file <- !is.null(structuralVariantsDataFile)
+    if (is_data_provided | is.null(window_size) ) stop("The input data and/or window size are missing. Set the 'giveExampleData' TRUE to get an example. Data can be: 1. the path of a VCF file (structuralVariantsDataFile), 2. the path of the a SV-allele table in plain text separated by 'spaces' or 'tabs' (structuralVariantsDataFile), or 3. the object of the SV-allele table (SVallelesTable). Window size is in kilobases.")
     window_size <- as.integer(window_size)
 
     # pre-cases
     # VCF is given give instructions
-    if (isVCF(structuralVariantsData)) {
-        .actionVCF(structuralVariantsData, window_size)
-        return(0)
+    if (data_is_file){
+        if (isVCF(structuralVariantsDataFile)) {
+            .actionVCF(structuralVariantsDataFile, window_size)
+            return(0)
+        }
+        # SV-allele table is given
+        SVallelesTable <- read.table(structuralVariantsDataFile, header = TRUE)
     }
-
-    # SV-allele table is given
-    SVallelesTable <- read.table(structuralVariantsData, header = TRUE)
 
     # check the data is like a matrix/data.frame
     cols <- ncol(SVallelesTable)
