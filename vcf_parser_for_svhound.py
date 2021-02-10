@@ -11,11 +11,12 @@
 
 # important imports
 import sys
+from datetime import datetime
 
 
 # error output
 def error_message(text):
-    print "[ERROR] %s" % text
+    print "[ERROR] %s" % (text)
 
 
 # incrementor class
@@ -211,18 +212,13 @@ def merge_sv_alleles(sv_list):
 
 usage = """
 USAGE:  cat sv_file.vcf | python2 sv_vcf_parser.py <window size>
-EXAMPLE: zcat 1000genome_hg19.vcf.gz | python2 sv_vcf_parser.py  50000
+EXAMPLE: zcat 1000genome_sample_hg19.vcf.gz | python2 sv_vcf_parser.py  50000
 """
 
 # main
 if __name__ == '__main__':
-    # DEFAULT VALUES ##########
-    
-    #   Default is 10kb
-    DEFAULT_WINDOW_SIZE = 10000
     
     # #########################
-    
     # used once
     print_header = True
     
@@ -233,6 +229,11 @@ if __name__ == '__main__':
     [script_name, analysis_window_size] = sys.argv
     analysis_window_size = int(analysis_window_size)
     
+    # Open stats file ##########
+    dateTimeObj = datetime.now()
+    stats_file = open("%s-%04dkb-%s.txt" % ("svhound-stats", analysis_window_size/1000    , dateTimeObj.strftime("%Y%m%d_%H%M%S")), "w")
+    stats_file.write("ID\tnumber of SVs\n")
+
     # temporary working variables
     rm_duplicates = {}
     sv_within_window = []
@@ -303,11 +304,13 @@ if __name__ == '__main__':
                                     sv_merge = merge_sv_alleles(sv_within_window)
                                     if sv_merge.pID not in last_print:
                                         sv_merge.sv_print()
+                                        stats_file.write("%s\t%s\n" % (sv_merge.pID, len(sv_within_window)))
                                         last_print[sv_merge.pID] = 1
                                 else:
                                     [sv_merge] = sv_within_window
                                     if sv_merge.pID not in last_print:
                                         sv_merge.sv_print()
+                                        stats_file.write("%s\t%s\n" % (sv_merge.pID, len(sv_within_window)))
                                         last_print[sv_merge.pID] = 1
                                 # init
                                 sv_within_window = []
@@ -319,10 +322,14 @@ if __name__ == '__main__':
         sv_merge = merge_sv_alleles(sv_within_window)
         if sv_merge.pID not in last_print:
             sv_merge.sv_print()
+            stats_file.write("%s\t%s\n" % (sv_merge.pID, len(sv_within_window)))
             last_print[sv_merge.pID] = 1
     else:
         if len(sv_within_window) == 1:
             [sv_merge] = sv_within_window
             if sv_merge.pID not in last_print:
                 sv_merge.sv_print()
+                stats_file.write("%s\t%s\n" % (sv_merge.pID, len(sv_within_window)))
                 last_print[sv_merge.pID] = 1
+    
+    stats_file.close()
