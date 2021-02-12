@@ -2,7 +2,7 @@
 # ### SVHOUND ######################################################################################
 # ##################################################################################################
 
-svhound <- function(structuralVariantsDataFile=NULL, SVallelesTable=NULL, window_size=NULL, output_prefix=NULL, subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE){
+svhound <- function(structuralVariantsDataFile=NULL, SVallelesTable=NULL, window_size=NULL, output_prefix=NULL, subsample=NULL, usePSF=FALSE, giveExampleData=FALSE, runExample=FALSE, onlypnew=TRUE){
 # ############################################## #
 # Analysis of SV with the ESF                    #
 # Wreapper for the analysis that includes a      #
@@ -44,12 +44,12 @@ svhound <- function(structuralVariantsDataFile=NULL, SVallelesTable=NULL, window
      
     # CASES 1 and 2: no subsample
     if (is.null(subsample)){
-        # EWENS SAMPLING FORMULA
+        # PTIMAN SAMPLING FORMULA
         if(usePSF){
             return(sv_analysis_PSF(sv_dataset = SVallelesTable, outprefix=output_prefix))
+        # EWENS SAMPLING FORMULA
         } else {
-        # PTIMAN SAMPLING FORMULA
-            return(sv_analysis_ESF(sv_dataset = SVallelesTable, outprefix=output_prefix))
+            return(sv_analysis_ESF(sv_dataset = SVallelesTable, outprefix=output_prefix, only_pnew=onlypnew))
         }
     } else {
     # CASES 3 and 4: do subsample

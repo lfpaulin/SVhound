@@ -6,7 +6,7 @@ apply_VERTICAL_MARGIN = 2
 apply_HORIZONTAL_MARGIN = 1
 
 
-sv_analysis_ESF <- function(sv_dataset=NULL, outprefix=NULL){
+sv_analysis_ESF <- function(sv_dataset=NULL, outprefix=NULL, only_pnew=TRUE){
 # ############################################## #
 # Analysis of SV with the ESF                    #
 #                                                #
@@ -38,10 +38,14 @@ sv_analysis_ESF <- function(sv_dataset=NULL, outprefix=NULL){
     # compile all the results
     sv_esf_pnew <- data.frame(k=k,
                     theta=sapply(k, function(x) theta[uniq_k == x]),
-                    pnewEWENS=sapply(k, function(x) pnew[uniq_k == x])
+                    pnew=sapply(k, function(x) pnew[uniq_k == x])
     )
-    svhound_results <- sv_esf_pnew$pnewEWENS
-    names(svhound_results) <- rownames(sv_dataset)
+    if(only_pnew){
+        svhound_results <- sv_esf_pnew$pnew
+        names(svhound_results) <- rownames(sv_dataset)
+    } else {
+        svhound_results <- sv_esf_pnew
+    }
 
     # save results to object
     outfile <- paste(outprefix, "-svhound_analysis.RData", sep="")
