@@ -12,6 +12,8 @@
 # important imports
 import sys
 from datetime import datetime
+import string
+import random 
 
 
 # error output
@@ -76,8 +78,8 @@ class vcf_line(object):
             if len(split_format) > 1:
                 use_format = True
                 gt_format_index = split_format.index("GT") # GT == genotype
-                ty_format_index = split_format.index("TY") # TY == type
-                co_format_index = split_format.index("CO") # CO == coordinates
+                #ty_format_index = split_format.index("TY") # TY == type
+                #co_format_index = split_format.index("CO") # CO == coordinates
 
             # indiviuals in the vcf file
             for gt in tab_sep_fields[VCF_MANDATORY_FIELDS:]:
@@ -230,8 +232,11 @@ if __name__ == '__main__':
     analysis_window_size = int(analysis_window_size)
     
     # Open stats file ##########
+    def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+        return ''.join(random.choice(chars) for _ in range(size))
+
     dateTimeObj = datetime.now()
-    stats_file = open("%s-%04dkb-%s.txt" % ("svhound-stats", analysis_window_size/1000    , dateTimeObj.strftime("%Y%m%d_%H%M%S")), "w")
+    stats_file = open("%s-%04dkb-%s-%s.txt" % ("svhound-stats", analysis_window_size/1000, id_generator(8), dateTimeObj.strftime("%Y%m%d_%H%M%S")), "w")
     stats_file.write("ID\tnumber of SVs\n")
 
     # temporary working variables
