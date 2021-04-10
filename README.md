@@ -48,3 +48,8 @@ We identified SV from 150 Illumina data sets based on bwa mem mappints to the v8
 
 
 ## Citation
+
+
+SVhound: Detection of future Structural Variation hotspots
+Luis Felipe Paulin, Muthuswamy Raveendran, Ronald Alan Harris, Jeffrey Rogers, Arndt von Haeseler, Fritz J Sedlazeck
+bioRxiv 2021.04.09.439237; doi: https://doi.org/10.1101/2021.04.09.439237
