@@ -17,7 +17,7 @@ svhound <- function(structuralVariantsDataFile=NULL, SVallelesTable=NULL, window
     # no examples, check for mandatory parameters then
     is_data_provided <- is.null(structuralVariantsDataFile) & is.null(SVallelesTable)
     data_is_file <- !is.null(structuralVariantsDataFile)
-    if (is_data_provided | is.null(window_size) ) stop("The input data and/or window size are missing. Set the 'giveExampleData' TRUE to get an example. Data can be: 1. the path of a VCF file (structuralVariantsDataFile), 2. the path of the a SV-allele table in plain text separated by 'spaces' or 'tabs' (structuralVariantsDataFile), or 3. the object of the SV-allele table (SVallelesTable). Window size is in kilobases.")
+    if (is_data_provided | is.null(window_size) ) stop("The input data and/or window size are missing. Set the 'giveExampleData' TRUE to get an example. Data can be: 1. the path of a VCF file (structuralVariantsDataFile), 2. the path of the a SV-allele table in plain text separated by 'spaces' or 'tabs' (structuralVariantsDataFile), or 3. the object of the SV-allele table (SVallelesTable).")
     window_size <- as.integer(window_size)
 
     # pre-cases

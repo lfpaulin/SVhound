@@ -16,10 +16,29 @@ zcat my_Vcf.gz | python vcf_parser_for_svhound.py 10000 > my_Vcf_extracted10kbpw
 You can apply filters or other commands to pipe the VCF file into the python script. 
 
 
-Next, you going to run SVhound: 
+Next, in R you are going to load the created table "my_Vcf_extracted10kbpwindows.txt": 
 
 ```
-Luis ?
+my_Vcf_10kbpwindows <- read.table("my_Vcf_extracted10kbpwindows.txt")
+
+```
+
+To then run SVhound:
+
+```
+library("SVhound")
+
+svhound(SVallelesTable=my_Vcf_10kbpwindows, window_size=10000)
+
+```
+
+SVhound will write the results in the same folder a file named "results-svhound_analysis.RData". In order to change the name of the results file, use parameter "output_prefix"
+
+```
+library("SVhound")
+
+svhound(SVallelesTable=my_Vcf_10kbpwindows, window_size=10000, output_prefix="my_file")
+
 ```
 
 
