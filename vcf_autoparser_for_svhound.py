@@ -232,7 +232,7 @@ def run_parser(filehander, analysis_window_size, samplefew=0, run_ID="", saveout
     dateTimeObj = datetime.now()
     parser_stats = {} # id : number of SV-alleles
     if saveout:
-        outfile_name = "svparser-results-%s-%s.tsv" % (run_ID, dateTimeObj.strftime("%Y%m%d_%H%M%S"))
+        outfile_name = "svparser-results-%s-%s-%s.tsv" % (run_ID, analysis_window_size, dateTimeObj.strftime("%Y%m%d_%H%M%S"))
         outfile = open(outfile_name, "w")
 
     # temporary working variables
@@ -382,7 +382,7 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
 
     # get n lines of fileV
     nlines = countlines(filehander)
-    log_message("%s lines in file" % nlines)
+    log_message("[%s] %s lines in file" % (run_ID, nlines))
 
     # sample some lines and make windows
     # samplefew = 1
@@ -399,14 +399,14 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
         window_size_bp = window_size * 1000
         parserStats = run_parser(filehander, window_size_bp, sampleSize, run_ID)
         current_averageSVwindow = count_SVperWindow(parserStats)
-        log_message("Current window size = %s" % window_size)
-        log_message("Current SVs per window = %s" % current_averageSVwindow)
+        log_message("[%s] Current window size = %s" % (run_ID, window_size))
+        log_message("[%s] Current SVs per window = %s" % (run_ID, current_averageSVwindow))
     else:
         # auto parser SV analysis
         window_size_found = False
         while not window_size_found:
-            log_message("########################")
-            log_message("Current window size = %s" % window_size)
+            log_message("########## %s ##########" % run_ID)
+            log_message("[%s] Current window size = %s" % (run_ID, window_size))
 
             # compute number of sv-alleles per window
             window_size_bp = window_size * 1000
@@ -427,15 +427,15 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
                 minWindowSizeKb = window_size
                 window_size = int((window_size + maxWindowSizeKb)/2)
 
-            log_message("Current SVs per window = %s" % current_averageSVwindow)
+            log_message("[%s] Current SVs per window = %s" % (run_ID, current_averageSVwindow))
 
         # Done
         if window_size_found:
-            log_message("run full")
+            log_message("[%s] run full" % run_ID)
             fileout = run_parser(filehander, window_size_bp, 0, run_ID, True)
-            log_message("Results are in file: %s" % fileout)
+            log_message("[%s] Results are in file: %s" % (run_ID, fileout))
 
-    log_message("Done")
+    log_message("[%s] Done" % run_ID)
 
 
 # number of lines of file
