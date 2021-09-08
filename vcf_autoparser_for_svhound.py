@@ -223,7 +223,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def run_parser(filehander, analysis_window_size, samplefew=0, run_ID="", saveout=False):
+def run_parser(filehander, analysis_window_size, samplefew=0, run_ID="", saveout=False, out_prefix=""):
 
     # go to start of file again (in case)
     filehander.seek(0)
@@ -232,7 +232,10 @@ def run_parser(filehander, analysis_window_size, samplefew=0, run_ID="", saveout
     dateTimeObj = datetime.now()
     parser_stats = {} # id : number of SV-alleles
     if saveout:
-        outfile_name = "svparser-results-%s-%s-%s.tsv" % (run_ID, analysis_window_size, dateTimeObj.strftime("%Y%m%d_%H%M%S"))
+        if out_prefix != "":
+            outfile_name = "%s-svparser-results-%s-%skb-%s.tsv" % (out_prefix, run_ID, analysis_window_size/1000, dateTimeObj.strftime("%Y%m%d_%H%M%S"))
+        else:
+            outfile_name = "svparser-results-%s-%skb-%s.tsv" % (run_ID, analysis_window_size/1000, dateTimeObj.strftime("%Y%m%d_%H%M%S"))
         outfile = open(outfile_name, "w")
 
     # temporary working variables
@@ -331,8 +334,8 @@ def run_parser(filehander, analysis_window_size, samplefew=0, run_ID="", saveout
                                 current_position = sv.POS
                                 sv_within_window.append(sv)
 
-        #add line counter
-        lineN += 1
+            #add line counter
+            lineN += 1
 
     # on final print for the last line
     if len(sv_within_window) > 1:
@@ -372,7 +375,7 @@ def count_SVperWindow(parserStats):
     return(float(nsv_all)/nline)
 
 
-def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowSizeKb=1000, espilonSVperWindow=0.2, sampleSize=0):
+def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowSizeKb=1000, espilonSVperWindow=0.2, sampleSize=0, out_prefix=""):
 
     # here we have the results
     SVperWindow = {}
@@ -432,7 +435,7 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
         # Done
         if window_size_found:
             log_message("[%s] run full" % run_ID)
-            fileout = run_parser(filehander, window_size_bp, 0, run_ID, True)
+            fileout = run_parser(filehander, window_size_bp, 0, run_ID, True, out_prefix)
             log_message("[%s] Results are in file: %s" % (run_ID, fileout))
 
     log_message("[%s] Done" % run_ID)
@@ -477,22 +480,22 @@ if __name__ == '__main__':
 
     # #########################
     # did the user specified a window size
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         error_message("Wrong number of parameters. %s" % usage)
         sys.exit("Program halt.")
 
     # Params
-    #   filename     name of the input VCF file
+    #   inputfile    name of the input VCF file
     #   avSValleles  genome-wide average number of SV-alleles per window
     #   sampleSize   number of SV from the VCF file to use for the genome-wide average number of SV-alleles, 0 is all
-    [script_name, filename, avSValleles, sampleSize] = sys.argv
+    [script_name, inputfile, avSValleles, sampleSize, outfile_prefix] = sys.argv
 
     # is file compressed
-    if "gz" in filename:
-        filehander = gzip.open(filename, "r")
+    if "gz" in inputfile:
+        filehander = gzip.open(inputfile, "r")
     else:
-        filehander = open(filename, "r")
+        filehander = open(inputfile, "r")
 
     # run parser
-    autoparser(filehander=filehander, averageSVperWindow=int(avSValleles), sampleSize=int(sampleSize))
+    autoparser(filehander=filehander, averageSVperWindow=int(avSValleles), sampleSize=int(sampleSize), out_prefix=outfile_prefix)
     filehander.close()
