@@ -394,7 +394,11 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
 
     # window size start in small
     window_size = minWindowSizeKb
+    minWindowSizeKb_update = minWindowSizeKb
+    maxWindowSizeKb_update = maxWindowSizeKb
+    window_is_limit = 0
     current_averageSVwindow = 0
+    limitLoops = 10 # failsafe
 
     testme = False
     if testme:
@@ -417,20 +421,32 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
             current_averageSVwindow = count_SVperWindow(parserStats)
 
             # redo with diff window size if average sv-alleles per window != X +- er, with er = 0.2
-            if (averageSVperWindow - espilonSVperWindow) < current_averageSVwindow < (averageSVperWindow + espilonSVperWindow):
-                window_size_found = True
+            if ((averageSVperWindow - espilonSVperWindow) < current_averageSVwindow < (averageSVperWindow + espilonSVperWindow)) or limitLoops == 0:
+                if limitLoops != 0:
+                    window_size_found = True
                 break
 
-            # TODO how to increase/decrease window size values
+            # increase/decrease window size values and update limits. Hard limists of min and max cannot go higher or lower
             if (averageSVperWindow - espilonSVperWindow) < current_averageSVwindow and not window_size_found:
-                maxWindowSizeKb = window_size
-                window_size = int((window_size + minWindowSizeKb)/2)
+                maxWindowSizeKb_update = window_size
+                window_size = int((window_size + minWindowSizeKb_update)/2)
 
             if current_averageSVwindow < (averageSVperWindow + espilonSVperWindow) and not window_size_found:
-                minWindowSizeKb = window_size
-                window_size = int((window_size + maxWindowSizeKb)/2)
+                minWindowSizeKb_update = window_size
+                window_size = int((window_size + maxWindowSizeKb_update)/2)
+
+            # for cases where the window size will be one of the hard limits, if it tries 3 times, break
+            # we still have a max of 10 loops to find the window size for the given SV density
+            if window_size == maxWindowSizeKb or window_size == minWindowSizeKb:
+                window_is_limit += 1
+            else :
+                window_is_limit = 0
+
+            if window_is_limit >= 3:
+                break
 
             log_message("[%s] Current SVs per window = %s" % (run_ID, current_averageSVwindow))
+            limitLoops -= 1
 
         # Done
         if window_size_found:
