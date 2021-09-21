@@ -385,7 +385,7 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
 
     # get n lines of fileV
     nlines = countlines(filehander)
-    log_message("[%s] %s lines in file" % (run_ID, nlines))
+    log_message("[%s - %s] %s lines in file" % (run_ID, out_prefix, nlines))
 
     # sample some lines and make windows
     # samplefew = 1
@@ -406,14 +406,15 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
         window_size_bp = window_size * 1000
         parserStats = run_parser(filehander, window_size_bp, sampleSize, run_ID)
         current_averageSVwindow = count_SVperWindow(parserStats)
-        log_message("[%s] Current window size = %s" % (run_ID, window_size))
-        log_message("[%s] Current SVs per window = %s" % (run_ID, current_averageSVwindow))
+        log_message("[%s - %s] Current window size = %s" % (run_ID, out_prefix, window_size))
+        log_message("[%s - %s] Current SVs per window = %s" % (run_ID, out_prefix, current_averageSVwindow))
     else:
         # auto parser SV analysis
         window_size_found = False
+        windw_size_is_limit = False
         while not window_size_found:
             log_message("########## %s ##########" % run_ID)
-            log_message("[%s] Current window size = %s" % (run_ID, window_size))
+            log_message("[%s - %s] Current window size = %s" % (run_ID, out_prefix, window_size))
 
             # compute number of sv-alleles per window
             window_size_bp = window_size * 1000
@@ -424,6 +425,8 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
             if ((averageSVperWindow - espilonSVperWindow) < current_averageSVwindow < (averageSVperWindow + espilonSVperWindow)) or limitLoops == 0:
                 if limitLoops != 0:
                     window_size_found = True
+                else:
+                    windw_size_is_limit = True
                 break
 
             # increase/decrease window size values and update limits. Hard limists of min and max cannot go higher or lower
@@ -443,18 +446,25 @@ def autoparser(filehander, averageSVperWindow=10, minWindowSizeKb=10, maxWindowS
                 window_is_limit = 0
 
             if window_is_limit >= 3:
+                log_message("[%s - %s] Window size hit the limit three times, cannot go higher/lower" % (run_ID, out_prefix))
+                windw_size_is_limit = True
                 break
 
-            log_message("[%s] Current SVs per window = %s" % (run_ID, current_averageSVwindow))
+            log_message("[%s - %s] Current SVs per window = %s" % (run_ID, out_prefix, current_averageSVwindow))
             limitLoops -= 1
 
         # Done
         if window_size_found:
-            log_message("[%s] run full" % run_ID)
+            log_message("[%s - %s] run full" % (run_ID, out_prefix))
             fileout = run_parser(filehander, window_size_bp, 0, run_ID, True, out_prefix)
-            log_message("[%s] Results are in file: %s" % (run_ID, fileout))
+            log_message("[%s - %s] Results are in file: %s" % (run_ID, out_prefix, fileout))
 
-    log_message("[%s] Done" % run_ID)
+        if windw_size_is_limit:
+            log_message("[%s - %s] run full (window size is in limit)" % (run_ID, out_prefix))
+            fileout = run_parser(filehander, window_size_bp, 0, run_ID, True, out_prefix)
+            log_message("[%s - %s] Results are in file: %s" % (run_ID, out_prefix, fileout))
+
+    log_message("[%s - %s] Done" % (run_ID, out_prefix))
 
 
 # number of lines of file
