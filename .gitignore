@@ -1,2 +1,4 @@
 .Rbuildignore
 .Rproj.user/*
+.idea/
+.idea/*

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # Script parse vcf files to annotate the number of disitinct
 # SV alleles for a defined window size (bp). It takes the data
@@ -13,7 +13,7 @@
 import sys
 from datetime import datetime
 import string
-import random 
+import random
 
 
 # error output
@@ -40,7 +40,7 @@ class vcf_line(object):
     #   python array is [start:not_including]
     #                   [:until] from start
     #                   [from:]  until end
-    
+
     # init
     def __init__(self, input_line):
         VCF_MANDATORY_FIELDS = 9
@@ -49,20 +49,20 @@ class vcf_line(object):
         if len(tab_sep_fields) > VCF_MANDATORY_FIELDS:
             #extract mandatory fileds
             [self.CHROM, POS, self.ID, REF, ALT, QUAL, self.FILTER, INFO, FORMAT] = tab_sep_fields[:VCF_MANDATORY_FIELDS]
-            
+
             # position is integer
             self.POS = int(POS)
-            
+
             # pID is a chromosom-position unique id
             self.pID = "%s:%s" % (self.CHROM, self.POS)
-            
+
             # quality is float or '.' when not reported
             # we change '.' for -1
             if (QUAL != "."):
                 self.QUAL = float(QUAL)
             else:
                 self.QUAL = -1.0
-            
+
             # allele (genotype), unique ones and number of appearance
             # for unique allels
             self.GENOTYPE_UNIQ = {}
@@ -70,7 +70,7 @@ class vcf_line(object):
             self.GENOTYPE_1000 = []
             # gives an unique numeric.id to the allele
             g = incrementor()
-            
+
             # FORMAT index of GT
             split_format = FORMAT.split(":")
             use_format = False
@@ -88,7 +88,7 @@ class vcf_line(object):
                     sv_gt = gt.split(":")[gt_format_index]
                     if sv_gt == "./.":
                         # use ./. as 0/0
-                        gt = "0/0" 
+                        gt = "0/0"
                         # use ./. with type and coordinate for uniqueness
                         # gt = "|".join([
                         #     gt.split(":")[ty_format_index],
@@ -119,38 +119,38 @@ class vcf_line(object):
             self.GENOTYPE_COUNT = {}
             self.GENOTYPE_1000 = []
         self.MERGE_SV = None
-    
+
     # functions used to edit the values of each field of the object
     def not_error(self):
         self.ERROR = False
-    
+
     def add_chromosome(self, chromosome):
         self.CHROM = chromosome
-    
+
     def add_position(self, position):
         self.POS = position
-        
+
     def add_pID(self, pID):
         self.pID = pID
-    
+
     def add_id(self, id_):
         self.ID = id_
-    
+
     def add_quality(self, qual):
         self.QUAL = qual
-    
+
     def add_genotype_uniq(self, geno_uniq):
         self.GENOTYPE_UNIQ = geno_uniq
-    
+
     def add_genotype_count(self, geno_count):
         self.GENOTYPE_COUNT = geno_count
-    
+
     def add_genotype_list(self, geno_list):
         self.GENOTYPE_1000 = geno_list
-    
+
     def add_genotype_merge(self, merge_list):
         self.MERGE_SV = merge_list
-    
+
     # def add_filter(self, filter):
         # self.FILTER = filter
 
@@ -161,10 +161,10 @@ class vcf_line(object):
 
 # merge the allele of two SV per individual
 def merge_sv_alleles(sv_list):
-    
+
     def mean(l):
         return(sum(l)/float(len(l)))
-    
+
     # SV class properties
     #   self.CHROM is STRING
     #   self.POS is INT
@@ -176,11 +176,11 @@ def merge_sv_alleles(sv_list):
     #   self.GENOTYPE_1000 is LIST
     #   self.MERGE_SV is LIST
     #   self.ERROR is BOOL
-    
+
     FIRST_ELEM = 0
     # create new sv object
     sv_merge = vcf_line("")
-    
+
     # we expect/assume the same chromosome
     # we take all redundant from the first
     # object in the list
@@ -196,6 +196,8 @@ def merge_sv_alleles(sv_list):
     dc = {}
     svl = []
     g = -1
+    print(sv_merge.MERGE_SV)
+    sys.exit()
     for gt in sv_merge.MERGE_SV:
         if gt not in d:
             g += 1
@@ -210,7 +212,7 @@ def merge_sv_alleles(sv_list):
     sv_merge.add_genotype_uniq(d)
     sv_merge.add_genotype_count(dc)
     return sv_merge
-                        
+
 
 usage = """
 USAGE:  cat sv_file.vcf | python2 sv_vcf_parser.py <window size>
@@ -219,18 +221,18 @@ EXAMPLE: zcat 1000genome_sample_hg19.vcf.gz | python2 sv_vcf_parser.py  50000
 
 # main
 if __name__ == '__main__':
-    
+
     # #########################
     # used once
     print_header = True
-    
+
     # did the user specified a window size
     if len(sys.argv) != 2:
         print usage
         sys.exit("Program halt. Wrong number of parameters")
     [script_name, analysis_window_size] = sys.argv
     analysis_window_size = int(analysis_window_size)
-    
+
     # Open stats file ##########
     def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
@@ -245,26 +247,26 @@ if __name__ == '__main__':
     current_chromosome = ""
     current_position = -1
     last_print = {}
-    
+
     # get the input from stdin
     for line in sys.stdin:
         # skip comments
         if not line.startswith("#"):
             # use vcf class
             sv = vcf_line(line.rstrip("\n"))
-            
+
             # check that the vcf line has the proper format
             if not sv.ERROR:
                 # single usage to pront the table header
                 if print_header:
                     print "\t" + "\t".join(["i%04d"%(i+1) for i in range(len(sv.GENOTYPE_1000))])
                     print_header = False
-                
+
                 # check chromosome and position
                 # uninitialized
                 if current_chromosome == "":
                     current_chromosome = sv.CHROM
-                
+
                 # different chromosome
                 if current_chromosome != sv.CHROM:
                     # print current result
@@ -288,20 +290,20 @@ if __name__ == '__main__':
                     # make a dictionary to remove duplicated lines
                     if sv.pID not in rm_duplicates:
                         rm_duplicates[sv.pID] = 1
-                
+
                         # check the position of the SV
                         # if -1 (un-initialized) then the
                         # curren position is the the sv position
                         if current_position == -1:
                             current_position = sv.POS
                             sv_within_window.append(sv)
-                        
+
                         # in next sv if closer than the given
                         # window size, we merge both
                         else:
                             if sv.POS - current_position <= analysis_window_size:
                                 sv_within_window.append(sv)
-                        
+
                             # next sv is father appart from window size
                             # print results and init
                             else:
@@ -321,7 +323,7 @@ if __name__ == '__main__':
                                 sv_within_window = []
                                 current_position = sv.POS
                                 sv_within_window.append(sv)
-    
+
     # on final print for the last line
     if len(sv_within_window) > 1:
         sv_merge = merge_sv_alleles(sv_within_window)
@@ -336,5 +338,5 @@ if __name__ == '__main__':
                 sv_merge.sv_print()
                 stats_file.write("%s\t%s\n" % (sv_merge.pID, len(sv_within_window)))
                 last_print[sv_merge.pID] = 1
-    
+
     stats_file.close()

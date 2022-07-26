@@ -84,6 +84,7 @@ class VCFLine(object):
             self.get_gt(FORMAT, self.SAMPLES)
             self.parse_info()
             self.pID = f'{self.CHROM}:{self.POS}-{self.END}'
+            self.genome_overlap = []
         else:
             # not in the vcf format, used to create empty objects
             self.CHROM = ""
@@ -103,7 +104,7 @@ class VCFLine(object):
         for each_gt in genotypes:
             for fmt, sv_gt in zip(_format.split(":"), each_gt.split(":")):
                 if fmt == "GT":
-                    if sv_gt == "./.":
+                    if sv_gt == "./." or sv_gt == ".":
                         # use ./. as 0/0
                         sv_gt = "0/0"
                     if sv_gt not in self.GENOTYPE_UNIQ:
@@ -158,6 +159,15 @@ class VCFLine(object):
     def add_genotype_merge(self, merge_list):
         self.MERGE_SV = merge_list
 
+    def get_genome_overlap(self, window_size):
+        overlap_start = int(self.POS/window_size)*window_size + 1
+        overlap_ends = max(overlap_start, int(self.END/window_size)*window_size)
+        if overlap_start == overlap_ends:
+            self.genome_overlap = [overlap_start]
+        else:
+            self.genome_overlap = range(overlap_start, overlap_ends, window_size)
+            # self.genome_overlap = [x for x in range(overlap_start, overlap_ends, window_size)]
+
     # functions to print sv details
     def sv_print(self):
         sv_alleles = "\t".join([str(g) for g in self.GENOTYPE_1000])
@@ -168,9 +178,27 @@ class VCFLine(object):
         sv_alleles = "\t".join([str(g) for g in self.GENOTYPE_1000])
         return f'{self.pID}\t{sv_alleles}'
 
+    # functions to return sv details, for the case of write to file using open
+    def sv_return_k(self):
+        n_sv_allele = len(self.ID.split(","))
+        return f'{self.pID}\t{len(self.GENOTYPE_COUNT)}\t{len(self.GENOTYPE_1000)}\t{n_sv_allele}\t{self.ID}'
+
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+
+def make_genome_windows(genome, window_size_bp):
+    genome_windows = {}
+    for each_chr in genome:
+        genome_windows[each_chr] = {}
+        for chr_pos in range(1, genome[each_chr], window_size_bp):
+            genome_windows[each_chr][chr_pos] = []
+    return genome_windows
+
 
 # merge the allele of two SV per individual
-def merge_sv_alleles(sv_list):
+def merge_sv_alleles(sv_list, this_window):
     # SV class properties
     #   self.CHROM is STRING
     #   self.POS is INT
@@ -185,9 +213,10 @@ def merge_sv_alleles(sv_list):
     # we expect/assume the same chromosome
     # we take all redundant from the first
     # object in the list
-    sv_merge.add_chromosome(sv_list[first_elem].CHROM)
-    sv_merge.add_position(sv_list[first_elem].CHROM)
-    sv_merge.add_pid(sv_list[first_elem].pID)
+    this_chromosome = sv_list[first_elem].CHROM
+    sv_merge.add_chromosome(this_chromosome)
+    sv_merge.add_position(this_window)
+    sv_merge.add_pid(f'{this_chromosome}:{this_window}')
     sv_merge.add_id(",".join([sv.ID for sv in sv_list]))
     n_sv_alleles = len(sv_list[first_elem].GENOTYPE_1000)
     sv_merge.add_genotype_merge([",".join(str(g.GENOTYPE_1000[i]) for g in sv_list) for i in range(n_sv_alleles)])
@@ -212,19 +241,6 @@ def merge_sv_alleles(sv_list):
     return sv_merge
 
 
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
-
-def make_genome_windows(genome, window_size_bp):
-    genome_windows = {}
-    for each_chr in genome:
-        genome_windows[each_chr] = {}
-        for chr_pos in range(1, genome[each_chr], window_size_bp):
-            genome_windows[each_chr][chr_pos] = []
-    return genome_windows
-
-
 def run_parser(file_handler, analysis_window_size, run_id="", save_out=False, out_prefix=""):
     # go to start of file again (in case)
     file_handler.seek(0)
@@ -232,38 +248,32 @@ def run_parser(file_handler, analysis_window_size, run_id="", save_out=False, ou
     date_time_obj = datetime.now()
     parser_stats = {}  # id : number of SV-alleles
     outfile_name = ""
+    outfile_name_k = ""
     outfile = None
+    outfile_k = None
     if save_out:
-        out_prefix = f'{out_prefix}-svparser' if out_prefix != "" else "svparser"
         window_kb = analysis_window_size/1000
         date_time_str = date_time_obj.strftime("%Y%m%d_%H%M%S")
-        outfile_name = f'{out_prefix}-results-{run_id}-{window_kb}kb-{date_time_str}.tsv'
+        out_prefix1 = f'{out_prefix}-svparser-sv_alleles' if out_prefix != "" else "svparser-sv_alleles"
+        outfile_name = f'{out_prefix1}-{run_id}-{window_kb}kb-{date_time_str}.tsv'
+        out_prefix2 = f'{out_prefix}-svparser-k' if out_prefix != "" else "svparser-k"
+        outfile_name_k = f'{out_prefix2}-{run_id}-{window_kb}kb-{date_time_str}.tsv'
         outfile = open(outfile_name, "w")
+        outfile_k = open(outfile_name_k, "w")
     # make genome
     genome = {}
     current_chromosome = ""
-    [chromo, pos] = ["", 0]
+    [chromosome, pos] = ["", 0]
     for line in file_handler:
         if not line.startswith("#"):
-            if current_chromosome != chromo and current_chromosome != "":
-                current_chromosome = chromo
-                genome[chromo] = int(pos)
-            [chromo, pos] = line.split("\t")[:2]
-            if current_chromosome == "":
-                current_chromosome = chromo
-            if chromo not in genome:
-                genome[chromo] = 0
+            [chromosome, pos] = line.split("\t")[:2]
+            genome[chromosome] = int(pos)
     # for last chromosome
-    genome[chromo] = int(pos)
+    genome[chromosome] = int(pos)
     genome_windows = make_genome_windows(genome, analysis_window_size)
-    my_logger.dev(genome_windows)
-
     # temporary working variables
-    sv_within_window = []
+    sv_list = {}
     current_chromosome = ""
-    current_position = -1
-    last_print = {}
-    line_n = 0
     # go to start
     file_handler.seek(0)
     for line in file_handler:
@@ -275,90 +285,23 @@ def run_parser(file_handler, analysis_window_size, run_id="", save_out=False, ou
         else:
             # use vcf class
             sv = VCFLine(line.rstrip("\n"))
-            # check that the vcf line has the proper format
-            # check chromosome and position
-            # uninitialized
-            if current_chromosome == "":
-                current_chromosome = sv.CHROM
-            # different chromosome
-            if current_chromosome != sv.CHROM:
-                # print current result
-                if len(sv_within_window) > 1:
-                    sv_merge = merge_sv_alleles(sv_within_window)
-                    if sv_merge.pID not in last_print:
-                        if save_out:
-                            outfile.write(sv_merge.sv_return() + "\n")
-                        last_print[sv_merge.pID] = 1
-                else:
-                    [sv_merge] = sv_within_window
-                    if sv_merge not in last_print:
-                        if save_out:
-                            outfile.write(sv_merge.sv_return() + "\n")
-                        last_print[sv_merge.pID] = 1
-                # init new chromosome
-                sv_within_window = []
-                current_chromosome = sv.CHROM
-                current_position = sv.POS
-                sv_within_window.append(sv)
-            # same chromosome
-            else:
-                # if -1 (un-initialized) then the
-                # current position is the sv position
-                if current_position == -1:
-                    current_position = sv.POS
-                    sv_within_window.append(sv)
-                # in next sv if closer than the given
-                # window size, we merge both
-                else:
-                    if sv.POS - current_position <= analysis_window_size:
-                        sv_within_window.append(sv)
-                    # next sv is father apart from window size
-                    # print results and init
-                    else:
-                        if len(sv_within_window) > 1:
-                            sv_merge = merge_sv_alleles(sv_within_window)
-                            if sv_merge.pID not in last_print:
-                                if save_out:
-                                    outfile.write(sv_merge.sv_return() + "\n")
-                                # number of SV-alleles per window in the genomes by window
-                                parser_stats[sv_merge.pID] = len(sv_merge.GENOTYPE_UNIQ)
-                                last_print[sv_merge.pID] = 1
-                        else:
-                            [sv_merge] = sv_within_window
-                            if sv_merge.pID not in last_print:
-                                if save_out:
-                                    outfile.write(sv_merge.sv_return() + "\n")
-                                # number of SV-alleles per window in the genomes by window
-                                parser_stats[sv_merge.pID] = len(sv_merge.GENOTYPE_UNIQ)
-                                last_print[sv_merge.pID] = 1
-                        # init
-                        sv_within_window = []
-                        current_position = sv.POS
-                        sv_within_window.append(sv)
-            # add line counter
-            line_n += 1
-    #
-    # on final print for the last line
-    if len(sv_within_window) > 1:
-        sv_merge = merge_sv_alleles(sv_within_window)
-        if sv_merge.pID not in last_print:
-            if save_out:
-                outfile.write(sv_merge.sv_return() + "\n")
-            # number of SV-alleles per window in the genomes by window
-            parser_stats[sv_merge.pID] = len(sv_merge.GENOTYPE_UNIQ)
-            last_print[sv_merge.pID] = 1
-    else:
-        if len(sv_within_window) == 1:
-            [sv_merge] = sv_within_window
-            if sv_merge.pID not in last_print:
-                if save_out:
-                    outfile.write(sv_merge.sv_return() + "\n")
-                # number of SV-alleles per window in the genomes by window
-                parser_stats[sv_merge.pID] = len(sv_merge.GENOTYPE_UNIQ)
-                last_print[sv_merge.pID] = 1
+            sv.get_genome_overlap(analysis_window_size)
+            sv_list[sv.ID] = sv
+            for overlap in sv.genome_overlap:
+                genome_windows[sv.CHROM][overlap].append(sv.ID)
 
+    for each_chr in genome_windows:
+        for each_window in genome_windows[each_chr]:
+            sv_list_merge = []
+            for each_sv_id in genome_windows[each_chr][each_window]:
+                sv_list_merge.append(sv_list[each_sv_id])
+            if len(sv_list_merge) > 0:
+                sv_merge = merge_sv_alleles(sv_list_merge, each_window)
+                outfile.write(sv_merge.sv_return() + "\n")
+                outfile_k.write(sv_merge.sv_return_k() + "\n")
     if save_out:
         outfile.close()
+        outfile_k.close()
         return outfile_name
 
     return parser_stats
@@ -376,6 +319,7 @@ def count_sv_per_window(parser_stats):
 
 
 def autoparser(file_handler, average_sv_alleles_window=10, out_prefix="",
+               fix_window=False, fix_window_size_kb=100,
                min_window_size_kb=10, max_window_size_kb=1000, epsilon_sv_window=0.2):
     # run id
     run_id = id_generator(8)
@@ -389,10 +333,9 @@ def autoparser(file_handler, average_sv_alleles_window=10, out_prefix="",
     window_is_limit = 0
     limit_loops = 10  # failsafe
     window_size_bp = 0
-    testme = False
-    if as_dev:
+    if fix_window:
         # single
-        window_size = 100  # in kb
+        window_size = fix_window_size_kb  # in kb
         window_size_bp = window_size * 1000
         _ = run_parser(file_handler, window_size_bp, run_id, True, out_prefix)
         SimpleLogger.info("[%s - %s] Current window size = %skb" % (run_id, out_prefix, window_size))
@@ -461,12 +404,10 @@ def buff_count(file_handler):
     lines = 0
     buf_size = 1024 * 1024
     read_f = file_handler.read  # loop optimization
-
     buf = read_f(buf_size)
     while buf:
         lines += buf.count('\n')
         buf = read_f(buf_size)
-
     return lines
 
 
@@ -492,22 +433,39 @@ def main():
     usage += "EXAMPLE: python3 sv_vcf_parser.py 1000genome_sample_hg19.vcf.gz 10 example1"
     # #########################
     # did the user specified a window size
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         SimpleLogger.error(f'Wrong number of parameters {usage}')
 
     # Params
     #   input_file          name of the input VCF file
     #   average_sv_alleles  genome-wide average number of SV-alleles per window
     #   sample_size         number of SV from the VCF file to use for the genome-wide av. number of SV-alleles, 0 is all
-    [_, input_file, average_sv_alleles, outfile_prefix] = sys.argv
+    input_file, average_sv_alleles, outfile_prefix = "", "", ""
+    dev_fix_the_window_size, dev_fixed_window_size_in_kb = False, 0
+    if len(sys.argv) == 4:
+        [_, input_file, average_sv_alleles, outfile_prefix] = sys.argv
+    elif len(sys.argv) == 5:
+        [_, input_file, average_sv_alleles, outfile_prefix, dev_fix_the_window_size] = sys.argv
+        dev_fix_the_window_size = dev_fix_the_window_size != 0 and dev_fix_the_window_size != "False"
+    elif len(sys.argv) == 6:
+        [_, input_file, average_sv_alleles, outfile_prefix, dev_fix_the_window_size, dev_fixed_window_size_in_kb] = sys.argv
+        dev_fix_the_window_size = dev_fix_the_window_size != 0 and dev_fix_the_window_size != "False"
+        try:
+            dev_fixed_window_size_in_kb = int(dev_fixed_window_size_in_kb)
+        except ValueError:
+            my_logger.warn(f'Could not convert value to integer, 100kb window is used instead')
+            dev_fixed_window_size_in_kb = 100
+    else:
+        SimpleLogger.error(f'Wrong number of parameters {usage}')
 
     # is file compressed
     if "gz" in input_file:
-        file_handler = gzip.open(input_file, "r")
+        file_handler = gzip.open(input_file, "rt")
     else:
         file_handler = open(input_file, "r")
     # run parser
-    autoparser(file_handler=file_handler, average_sv_alleles_window=int(average_sv_alleles), out_prefix=outfile_prefix)
+    autoparser(file_handler=file_handler, average_sv_alleles_window=int(average_sv_alleles), out_prefix=outfile_prefix,
+               fix_window=dev_fix_the_window_size, fix_window_size_kb=dev_fixed_window_size_in_kb)
     file_handler.close()
 
 
